@@ -41,6 +41,7 @@ class Imad:
         "Machine Learning",  "Deep Learning",
         "Big Data",          "NLP",
         "MLOps",             "AI Systems",
+        "cyber security",    "data science",
     ]
 
     currently  = {
