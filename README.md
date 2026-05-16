@@ -475,8 +475,6 @@
     font-weight: 700;
   }
 
-
-
   /* ========== STATS ========== */
   .stats-grid {
     display: grid;
@@ -916,38 +914,6 @@
     </div>
   </section>
 
-  <!-- ========== SNAKE GAME ========== -->
-  <section>
-    <div class="section-label">> snake --eat-commits</div>
-    <div class="section-title">Contribution Snake</div>
-    <div class="snake-wrapper">
-      <div class="snake-container">
-        <canvas id="snakeCanvas" width="320" height="240"></canvas>
-        <div class="snake-controls" style="margin-top:10px">
-          <button class="snake-btn" id="snakeBtn" onclick="toggleSnake()">[ PAUSE ]</button>
-          <button class="snake-btn" onclick="resetSnake()">[ RESET ]</button>
-          <span style="font-size:10px; color:var(--text-muted); margin-left:6px;">↑↓←→ to control</span>
-        </div>
-      </div>
-      <div class="snake-info">
-        <div class="snake-score" id="snakeScore">0</div>
-        <div class="snake-label">commits eaten</div>
-        <div class="snake-commits" id="commitList">
-          <div class="commit-item" data-idx="0"><div class="commit-dot"></div>feat: init spam-detection model</div>
-          <div class="commit-item" data-idx="1"><div class="commit-dot"></div>fix: TF-IDF vectorizer pipeline</div>
-          <div class="commit-item" data-idx="2"><div class="commit-dot"></div>add: LSTM layer with dropout</div>
-          <div class="commit-item" data-idx="3"><div class="commit-dot"></div>feat: FastAPI /predict endpoint</div>
-          <div class="commit-item" data-idx="4"><div class="commit-dot"></div>fix: train/test split ratio</div>
-          <div class="commit-item" data-idx="5"><div class="commit-dot"></div>add: confusion matrix viz</div>
-          <div class="commit-item" data-idx="6"><div class="commit-dot"></div>feat: Django store models</div>
-          <div class="commit-item" data-idx="7"><div class="commit-dot"></div>refactor: chatbot intent parser</div>
-          <div class="commit-item" data-idx="8"><div class="commit-dot"></div>add: BERT text classifier</div>
-          <div class="commit-item" data-idx="9"><div class="commit-dot"></div>docs: update README with results</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
   <!-- ========== STATS ========== -->
   <section>
     <div class="section-label">> stats</div>
@@ -1058,119 +1024,6 @@ for(let w=0;w<52;w++){
   }
 }
 
-// ─── SNAKE GAME ──────────────────────────────────────────
-const canvas = document.getElementById('snakeCanvas');
-const ctx = canvas.getContext('2d');
-const COLS = 32, ROWS = 24, CELL = 10;
-
-let snake, dir, nextDir, food, score, running, paused, gameLoop;
-const COMMITS = document.querySelectorAll('.commit-item');
-
-function initSnake() {
-  snake = [{x:8,y:12},{x:7,y:12},{x:6,y:12}];
-  dir = {x:1,y:0};
-  nextDir = {x:1,y:0};
-  score = 0;
-  placeFood();
-  document.getElementById('snakeScore').textContent = '0';
-  COMMITS.forEach(c => c.classList.remove('eaten'));
-}
-
-function placeFood() {
-  do {
-    food = {x:Math.floor(Math.random()*COLS), y:Math.floor(Math.random()*ROWS)};
-  } while(snake.some(s=>s.x===food.x&&s.y===food.y));
-}
-
-function drawGame() {
-  ctx.fillStyle = 'rgba(0,0,8,0.95)';
-  ctx.fillRect(0,0,canvas.width,canvas.height);
-
-  // Grid
-  ctx.strokeStyle = 'rgba(65,105,225,0.06)';
-  ctx.lineWidth = 0.5;
-  for(let x=0;x<=COLS;x++){ctx.beginPath();ctx.moveTo(x*CELL,0);ctx.lineTo(x*CELL,ROWS*CELL);ctx.stroke();}
-  for(let y=0;y<=ROWS;y++){ctx.beginPath();ctx.moveTo(0,y*CELL);ctx.lineTo(COLS*CELL,y*CELL);ctx.stroke();}
-
-  // Snake
-  snake.forEach((seg,i) => {
-    const alpha = 1 - (i/snake.length)*0.5;
-    if(i===0) {
-      ctx.fillStyle = `rgba(0,229,255,${alpha})`;
-      ctx.shadowColor = 'rgba(0,229,255,0.6)';
-      ctx.shadowBlur = 8;
-    } else {
-      ctx.fillStyle = `rgba(65,105,225,${alpha*0.9})`;
-      ctx.shadowBlur = 0;
-    }
-    ctx.fillRect(seg.x*CELL+1, seg.y*CELL+1, CELL-2, CELL-2);
-  });
-  ctx.shadowBlur = 0;
-
-  // Food (commit dot)
-  ctx.fillStyle = '#00ff88';
-  ctx.shadowColor = 'rgba(0,255,136,0.8)';
-  ctx.shadowBlur = 10;
-  ctx.fillRect(food.x*CELL+2, food.y*CELL+2, CELL-4, CELL-4);
-  ctx.shadowBlur = 0;
-
-  // Score overlay
-  ctx.fillStyle = 'rgba(0,229,255,0.3)';
-  ctx.font = '9px Share Tech Mono';
-  ctx.fillText('commits: '+score, 5, 235);
-}
-
-function stepGame() {
-  dir = nextDir;
-  const head = {x:snake[0].x+dir.x, y:snake[0].y+dir.y};
-  // Wrap
-  head.x = (head.x+COLS)%COLS;
-  head.y = (head.y+ROWS)%ROWS;
-  // Self collision
-  if(snake.some(s=>s.x===head.x&&s.y===head.y)) { initSnake(); return; }
-  snake.unshift(head);
-  if(head.x===food.x&&head.y===food.y) {
-    score++;
-    document.getElementById('snakeScore').textContent = score;
-    // Mark commit eaten
-    const idx = (score-1) % COMMITS.length;
-    COMMITS[idx].classList.add('eaten');
-    placeFood();
-  } else {
-    snake.pop();
-  }
-  drawGame();
-}
-
-running = true; paused = false;
-initSnake();
-drawGame();
-gameLoop = setInterval(stepGame, 120);
-
-document.addEventListener('keydown', e => {
-  const map = {ArrowUp:{x:0,y:-1},ArrowDown:{x:0,y:1},ArrowLeft:{x:-1,y:0},ArrowRight:{x:1,y:0}};
-  if(map[e.key]) {
-    e.preventDefault();
-    const nd = map[e.key];
-    if(nd.x !== -dir.x || nd.y !== -dir.y) nextDir = nd;
-  }
-});
-
-function toggleSnake() {
-  paused = !paused;
-  document.getElementById('snakeBtn').textContent = paused ? '[ PLAY ]' : '[ PAUSE ]';
-  if(paused) clearInterval(gameLoop);
-  else gameLoop = setInterval(stepGame, 120);
-}
-
-function resetSnake() {
-  clearInterval(gameLoop);
-  initSnake();
-  drawGame();
-  paused = false;
-  document.getElementById('snakeBtn').textContent = '[ PAUSE ]';
-  gameLoop = setInterval(stepGame, 120);
-}
 </script>
 
 </body>
